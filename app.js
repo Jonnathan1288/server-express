@@ -10,7 +10,14 @@ app.use(cors());
 
 app.post('/api/test', (req, res) => {
     const body = req.body;
+
+    const companyCode = req.headers["x-company-code"];
+    const userCode = req.headers["x-user-code"];
+
+
     console.log({body: body});
+    console.log({company: companyCode});
+    console.log({user: userCode});
     return res.status(200).json({ data: 'OK' });
 });
 
