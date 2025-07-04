@@ -145,7 +145,6 @@ app.post("/api/hook/basic", (req, res) => {
 
     const [username, password] = credentials.split(":");
 
-    // Validar que username y password no estén vacíos
     if (!username || !password) {
         return res
             .status(401)
