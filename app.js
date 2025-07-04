@@ -14,7 +14,6 @@
 //     const companyCode = req.headers["x-company-code"];
 //     const userCode = req.headers["x-user-code"];
 
-
 //     console.log({body: body});
 //     console.log({company: companyCode});
 //     console.log({user: userCode});
@@ -25,116 +24,128 @@
 //     console.log(`Servidor corriendo en http://localhost:${port}`);
 // });
 
-
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
+const express = require("express");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
 // require('dotenv').config();
 
 const app = express();
 const port = 3000;
 
-const JWT_SECRET = 'key-secure';
+const JWT_SECRET = "key-secure";
 
 // Basic auth
 const VALID_CREDENTIALS = {
-    username: 'user',
-    password: 'pass'
+    username: "user",
+    password: "pass",
 };
 
 app.use(express.json());
 app.use(cors());
 
-app.post('/api/login', (req, res) => {
+app.post("/api/public", (req, res) => {
+    const body = req.body;
+    const companyCode = req.headers["x-company-code"];
+    const userCode = req.headers["x-user-code"];
+
+    console.log({ body: body });
+    console.log({ company: companyCode });
+    console.log({ user: userCode });
+
+    return res.status(200).json({ statusCode: 200, message: "Hook correctly received", body });
+});
+
+app.post("/api/login", (req, res) => {
     const { username, password } = req.body;
 
-    if (username === 'user' && password === 'pass') {
+    if (username === "user" && password === "pass") {
         const payload = {
             username: username,
             userId: 123,
         };
 
         const token = jwt.sign(payload, JWT_SECRET, {
-            expiresIn: '1h' 
+            expiresIn: "1h",
         });
 
         return res.status(200).json({ token });
     } else {
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: "Invalid credentials" });
     }
 });
 
-app.use('/api/test', (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+app.use("/api/hook/bearer", (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Missing or invalid Authorization header" });
     }
 
-    const token = authHeader.split(' ')[1];
+    const token = authHeader.split(" ")[1];
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded; 
+        req.user = decoded;
     } catch (err) {
-        return res.status(401).json({ error: 'Invalid or expired token' });
+        return res.status(401).json({ error: "Invalid or expired token" });
     }
 
     next();
 });
 
-// Secure Endpoint
-app.post('/api/test', (req, res) => {
+app.post("/api/hook/bearer", (req, res) => {
     const body = req.body;
 
-    const companyCode = req.headers['x-company-code'];
-    const userCode = req.headers['x-user-code'];
+    const companyCode = req.headers["x-company-code"];
+    const userCode = req.headers["x-user-code"];
 
     console.log({ body: body });
     console.log({ company: companyCode });
     console.log({ user: userCode });
-    console.log({ userData: req.user }); 
+    console.log({ userData: req.user });
 
-    return res.status(200).json({ data: 'OK' });
+    return res.status(200).json({ data: "OK" });
 });
 
-app.post('/api/users', (req, res) => {
+app.post("/api/hook/basic", (req, res) => {
+    const companyCode = req.headers["x-company-code"];
+    const userCode = req.headers["x-user-code"];
 
-    const companyCode = req.headers['x-company-code'];
-    const userCode = req.headers['x-user-code'];
-    
-    const authHeader = req.headers['authorization'];
+    const authHeader = req.headers["authorization"];
     if (!authHeader) {
-        return res.status(401).json({ error: 'Missing Authorization header' });
+        return res.status(401).json({ error: "Missing Authorization header" });
     }
 
-    if (!authHeader.startsWith('Basic ')) {
-        return res.status(401).json({ error: 'Invalid Authorization header. Basic Auth required' });
+    if (!authHeader.startsWith("Basic ")) {
+        return res.status(401).json({ error: "Invalid Authorization header. Basic Auth required" });
     }
 
     let credentials;
+
     try {
-        const base64Credentials = authHeader.split(' ')[1];
-        credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+        const base64Credentials = authHeader.split(" ")[1];
+        credentials = Buffer.from(base64Credentials, "base64").toString("utf-8");
     } catch (err) {
-        return res.status(401).json({ error: 'Invalid Basic Auth credentials format' });
+        return res.status(401).json({ error: "Invalid Basic Auth credentials format" });
     }
 
-    if (!credentials.includes(':')) {
-        return res.status(401).json({ error: 'Invalid credentials format. Expected username:password' });
+    if (!credentials.includes(":")) {
+        return res
+            .status(401)
+            .json({ error: "Invalid credentials format. Expected username:password" });
     }
 
-    const [username, password] = credentials.split(':');
+    const [username, password] = credentials.split(":");
 
     // Validar que username y password no estén vacíos
     if (!username || !password) {
-        return res.status(401).json({ error: 'Username or password cannot be empty' });
+        return res.status(401).json({ error: "Username or password cannot be empty" });
     }
 
     if (username !== VALID_CREDENTIALS.username) {
-        return res.status(401).json({ error: 'Invalid username' });
+        return res.status(401).json({ error: "Invalid username" });
     }
 
     if (password !== VALID_CREDENTIALS.password) {
-        return res.status(401).json({ error: 'Invalid password' });
+        return res.status(401).json({ error: "Invalid password" });
     }
 
     const body = req.body;
@@ -143,9 +154,8 @@ app.post('/api/users', (req, res) => {
     console.log({ user: userCode });
     console.log({ username: username });
 
-    return res.status(200).json({ data: 'User authenticated successfully' });
+    return res.status(200).json({ data: "User authenticated successfully" });
 });
-
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
