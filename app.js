@@ -52,7 +52,9 @@ app.post("/api/public", (req, res) => {
     console.log({ company: companyCode });
     console.log({ user: userCode });
 
-    return res.status(200).json({ statusCode: 200, message: "Hook correctly received", body });
+    return res
+        .status(200)
+        .json({ statusCode: 200, message: "Hook correctly received", data: body });
 });
 
 app.post("/api/login", (req, res) => {
@@ -68,16 +70,18 @@ app.post("/api/login", (req, res) => {
             expiresIn: "1h",
         });
 
-        return res.status(200).json({ token });
+        return res.status(200).json({ statusCode: 200, message: "successful", token: token });
     } else {
-        return res.status(401).json({ error: "Invalid credentials" });
+        return res.status(401).json({ statusCode: 401, message: "Invalid credentials" });
     }
 });
 
 app.use("/api/hook/bearer", (req, res, next) => {
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "Missing or invalid Authorization header" });
+        return res
+            .status(401)
+            .json({ statusCode: 401, message: "Missing or invalid Authorization header" });
     }
 
     const token = authHeader.split(" ")[1];
@@ -85,7 +89,7 @@ app.use("/api/hook/bearer", (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.user = decoded;
     } catch (err) {
-        return res.status(401).json({ error: "Invalid or expired token" });
+        return res.status(401).json({ statusCode: 401, message: "Invalid or expired token" });
     }
 
     next();
@@ -102,7 +106,7 @@ app.post("/api/hook/bearer", (req, res) => {
     console.log({ user: userCode });
     console.log({ userData: req.user });
 
-    return res.status(200).json({ data: "OK" });
+    return res.status(200).json({ statusCode: 200, message: "Hook correctly received" });
 });
 
 app.post("/api/hook/basic", (req, res) => {
@@ -111,11 +115,14 @@ app.post("/api/hook/basic", (req, res) => {
 
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
-        return res.status(401).json({ error: "Missing Authorization header" });
+        return res.status(401).json({ statusCode: 401, message: "Missing Authorization header" });
     }
 
     if (!authHeader.startsWith("Basic ")) {
-        return res.status(401).json({ error: "Invalid Authorization header. Basic Auth required" });
+        return res.status(401).json({
+            statusCode: 401,
+            message: "Invalid Authorization header. Basic Auth required",
+        });
     }
 
     let credentials;
@@ -124,28 +131,33 @@ app.post("/api/hook/basic", (req, res) => {
         const base64Credentials = authHeader.split(" ")[1];
         credentials = Buffer.from(base64Credentials, "base64").toString("utf-8");
     } catch (err) {
-        return res.status(401).json({ error: "Invalid Basic Auth credentials format" });
+        return res
+            .status(401)
+            .json({ statusCode: 401, message: "Invalid Basic Auth credentials format" });
     }
 
     if (!credentials.includes(":")) {
-        return res
-            .status(401)
-            .json({ error: "Invalid credentials format. Expected username:password" });
+        return res.status(401).json({
+            statusCode: 401,
+            message: "Invalid credentials format. Expected username:password",
+        });
     }
 
     const [username, password] = credentials.split(":");
 
     // Validar que username y password no estén vacíos
     if (!username || !password) {
-        return res.status(401).json({ error: "Username or password cannot be empty" });
+        return res
+            .status(401)
+            .json({ statusCode: 401, message: "Username or password cannot be empty" });
     }
 
     if (username !== VALID_CREDENTIALS.username) {
-        return res.status(401).json({ error: "Invalid username" });
+        return res.status(401).json({ statusCode: 401, message: "Invalid username" });
     }
 
     if (password !== VALID_CREDENTIALS.password) {
-        return res.status(401).json({ error: "Invalid password" });
+        return res.status(401).json({ statusCode: 401, message: "Invalid password" });
     }
 
     const body = req.body;
@@ -154,7 +166,7 @@ app.post("/api/hook/basic", (req, res) => {
     console.log({ user: userCode });
     console.log({ username: username });
 
-    return res.status(200).json({ data: "User authenticated successfully" });
+    return res.status(200).json({ statusCode: 200, message: "Hook correctly received" });
 });
 
 app.listen(port, () => {
